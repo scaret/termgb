@@ -1,0 +1,101 @@
+#!/usr/bin/env python
+try:
+    import os,sys,re,locale
+
+except ImportError, e:
+    raise ImportError (str(e) + """
+
+A critical module was not found. Probably your python was not successfully installed""")
+
+sys.path.append(os.path.realpath('.'))
+try:
+    # hack from pexpect
+    import pexpect_ng
+except ImportError, e:
+    raise ImportError('''
+    pexpect_ng was not found in current path
+    ''')
+
+
+# locale
+loc = locale.getdefaultlocale()
+
+# utilities for charset convert
+debug   = 0
+NEW_LINE    = chr(10)
+GBK_SYMBOL_RANGE = [[0x2010, 0x2606],
+                    [0x02b0, 0x02ff],
+                    0xb7,
+                    [0xa1, 0xbf]]
+
+def build_re(l):
+    L = []
+    for i in l:
+        if isinstance(i, list):
+            f, t = i
+            try:
+                f = unichr(f)
+                t = unichr(t)
+                L.append('%s-%s'%(f, t))
+            except:
+                pass
+        else:
+            try:
+                L.append(unichr(i))
+            except:
+                pass
+    RE  = '([%s])'%''.join(L)
+    return re.compile(RE, re.UNICODE)
+
+RE  = build_re(GBK_SYMBOL_RANGE)
+
+# log
+if debug == 1:
+    f_log   = open('log.txt', 'a')
+
+def output_filter(data):
+    '''
+        convert string encoding from specific charset to locale
+    '''
+    global loc
+    if type(data) != type('str'):
+        raise TypeError("convert_filter can only process string type data")
+    data    = re.sub("\033[0-9;]I","",data)
+    data    = re.sub(RE, r'\1', unicode(data, "GB18030", 'ignore'))
+    data    = data.encode(loc[1])
+    return data
+
+def input_filter(data):
+    '''
+        convert string encoding from locale to specific charset
+    '''
+    global loc
+    if type(data) != type('str'):
+        raise TypeError("convert_filter can only process string type data")
+    data_list   = data.split(NEW_LINE)
+    tmp_list= []
+    for s in data_list:
+        try:
+            tmp_list.append(s.decode(loc[1]).encode("GB18030"))
+        except UnicodeDecodeError:
+            tmp_list.append(ss)
+    return NEW_LINE.join(tmp_list)
+
+def send_zero_byte(p):
+    '''
+    For bbs.seu.edu.cn, it is enough.
+    '''
+    p.send(chr(0))
+
+def main():
+    '''
+    '''
+    Rows    = 24
+    Columns = 80
+    p = pexpect_ng.spawn(" ".join(sys.argv[1:]), rows=Rows, columns=Columns)
+    p.interact(input_filter=input_filter, output_filter=output_filter, timeout = 30, timeout_handle = {send_zero_byte:p})
+    if debug == 1:
+        f_log.close()
+
+if __name__ == "__main__":
+    main()

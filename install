@@ -1,0 +1,7 @@
+#!/bin/sh
+echo "moving termgb to /usr/bin..."
+chmod 755 termgb
+sudo cp termgb /usr/bin/
+chmod 644 pexpect_ng.py
+sudo cp pexpect_ng.py /usr/bin/
+echo "type 'termgb telnet bbs.sjtu.edu.cn' to have a try "
