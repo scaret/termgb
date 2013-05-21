@@ -81,11 +81,11 @@ def input_filter(data):
             tmp_list.append(ss)
     return NEW_LINE.join(tmp_list)
 
-def send_zero_byte(p):
+def timeoutHandler(p):
     '''
-    For bbs.seu.edu.cn, it is enough.
+    Close the terminal after half-an-hour timeout
     '''
-    p.send(chr(0))
+    exit()
 
 def main():
     '''
@@ -93,7 +93,7 @@ def main():
     Rows    = 24
     Columns = 80
     p = pexpect_ng.spawn(" ".join(sys.argv[1:]), rows=Rows, columns=Columns)
-    p.interact(input_filter=input_filter, output_filter=output_filter, timeout = 30, timeout_handle = {send_zero_byte:p})
+    p.interact(input_filter=input_filter, output_filter=output_filter, timeout = 1500, timeout_handle = {timeoutHandler:p})
     if debug == 1:
         f_log.close()
 
